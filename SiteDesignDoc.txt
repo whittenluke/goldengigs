@@ -1,0 +1,740 @@
+# GoldenGigs - Site Design Document v1
+
+## 0. Site Vision
+
+### A. Mission Statement
+To redefine retirement by connecting experienced professionals with meaningful, flexible work opportunities while providing businesses access to seasoned talent.
+
+### B. Core Objectives
+1. Economic Empowerment
+   - Enable supplemental income for retirees
+   - Provide flexible, part-time opportunities
+   - Support financial independence
+
+2. Value Proposition
+   - For Retirees:
+     - Flexible work arrangements
+     - Meaningful engagement
+     - Skills utilization
+     - Income supplementation
+   
+   - For Businesses:
+     - Access to experienced talent
+     - Reliable workforce
+     - Knowledge transfer
+     - Mentorship opportunities
+
+### C. Platform Differentiators
+1. Specialized Focus
+   - Retirement-friendly opportunities
+   - Experience-based matching
+   - Flexible scheduling system
+   - Intergenerational collaboration
+
+2. Trust & Quality
+   - Verified employers
+   - Curated opportunities
+   - Experience validation
+   - Skills-based matching
+
+### D. Development Philosophy
+1. Cost-Effective Development
+   - Leverage free tiers of services
+   - Build vs buy decisions favor in-house when cost-effective
+   - Optimize infrastructure costs
+   - Minimize third-party service dependencies
+
+2. MVP Approach
+   - Start with essential features only
+   - Use built-in Supabase full-text search initially
+   - Utilize free tier services where possible
+   - Scale services only with proven demand
+
+## I. Core User Flows
+
+### A. Job Seekers
+1. Landing/Registration
+   - Email signup
+   - Profile creation
+   - Experience/skills input
+   - Schedule preferences
+   - Resume upload
+
+2. Job Discovery 
+   - Search jobs
+   - Filter by location/type/schedule
+   - Save favorites
+   - Quick apply
+   - Set job alerts
+
+3. Profile Management
+   - Update availability
+   - Manage applications
+   - Message history
+   - Profile visibility settings
+
+### B. Employers
+1. Company Registration
+   - Company profile
+   - Verification process
+   - Payment setup
+
+2. Job Management
+   - Post new positions
+   - Manage active listings
+   - Review applications
+   - Message candidates
+   - Track hiring status
+
+## II. Technical Architecture
+
+### A. Database Schema (Supabase)
+
+```sql
+-- Users Table
+create table users (
+  id uuid references auth.users primary key,
+  user_type varchar check (user_type in ('employer', 'jobseeker')),
+  email text unique,
+  full_name text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- JobSeeker Profiles
+create table jobseeker_profiles (
+  id uuid references users primary key,
+  years_experience integer,
+  skills text[],
+  preferred_schedule text[],
+  preferred_location jsonb,
+  resume_url text,
+  availability_status varchar,
+  bio text,
+  updated_at timestamptz default now()
+);
+
+-- Employer Profiles
+create table employer_profiles (
+  id uuid references users primary key,
+  company_name text,
+  company_size varchar,
+  industry text,
+  location jsonb,
+  website text,
+  verified boolean default false,
+  updated_at timestamptz default now()
+);
+
+-- Jobs
+create table jobs (
+  id uuid primary key default uuid_generate_v4(),
+  employer_id uuid references employer_profiles,
+  title text,
+  description text,
+  requirements text[],
+  schedule_type varchar,
+  location jsonb,
+  salary_range jsonb,
+  is_remote boolean,
+  status varchar default 'active',
+  created_at timestamptz default now(),
+  expires_at timestamptz
+);
+
+-- Applications
+create table applications (
+  id uuid primary key default uuid_generate_v4(),
+  job_id uuid references jobs,
+  user_id uuid references jobseeker_profiles,
+  status varchar default 'pending',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+```
+
+## III. Page Structure
+
+### A. Public Pages
+
+- Homepage
+-- Value proposition
+-- Search bar
+-- Featured jobs
+-- Success stories
+-- Call-to-action sections
+
+- Search Results
+-- Filter sidebar
+-- Job cards
+-- Quick apply buttons
+-- Pagination
+
+- Job Details
+-- Full description
+-- Company info
+-- Similar jobs
+-- Apply button
+
+### B. Authenticated Pages
+
+- Job Seeker Dashboard
+
+- Application status
+-- Recommended jobs
+-- Profile completion
+-- Saved searches
+
+- Employer Dashboard
+-- Active listings
+-- Applicant tracking
+-- Analytics
+-- Billing status
+
+## IV. Component Library
+
+### A. Core Components
+
+jsx
+
+// Primary UI components needed:
+- Button (primary, secondary, tertiary)
+- Input (text, select, multi-select)
+- Card (job, profile, company)
+- Modal (confirmations, forms)
+- Alert (success, error, info)
+- Badge (status indicators)
+- Avatar (user, company)
+- Dropdown (navigation, filters)
+
+### B. Feature Components
+
+jsx
+
+// Complex components needed:
+- SearchBar
+- FilterPanel
+- JobCard
+- ApplicationTracker
+- MessageThread
+- ProfileEditor
+- LocationPicker
+- DatePicker
+
+## V. Responsive Design Breakpoints
+
+css
+
+
+/* Breakpoint system */
+sm: '640px'
+md: '768px'
+lg: '1024px'
+xl: '1280px'
+2xl: '1536px'
+
+###  VI. Color System
+
+css
+
+
+/* Base colors */
+primary: '#1E40AF'    // Deep blue
+secondary: '#047857'  // Forest green
+accent: '#F59E0B'    // Gold
+background: '#F3F4F6'
+text: {
+  primary: '#111827',
+  secondary: '#4B5563'
+}
+
+## VII. Initial Routes
+
+javascript
+
+routes = [
+  // Public routes
+  '/',                    // Homepage
+  '/search',              // Job search
+  '/jobs/:id',            // Job details
+  '/companies/:id',       // Company profile
+  
+  // Auth routes
+  '/login',
+  '/signup',
+  '/reset-password',
+  
+  // Protected routes
+  '/dashboard',           // User dashboard
+  '/profile',             // Edit profile
+  '/applications',        // Application management
+  '/messages',            // Messaging center
+  '/employer/*'           // Employer section
+]
+## VIII. API Endpoints
+
+### A. Authentication
+
+javascript
+
+POST /auth/signup
+POST /auth/login
+POST /auth/reset-password
+
+### B. Jobs
+
+javascript
+
+GET /jobs
+GET /jobs/:id
+POST /jobs
+PUT /jobs/:id
+DELETE /jobs/:id
+
+### C. Applications
+
+javascript
+
+POST /applications
+GET /applications/user/:userId
+GET /applications/job/:jobId
+PUT /applications/:id
+## IX. Performance Considerations
+
+javascript
+
+Implement pagination for all lists
+Cache frequently accessed data
+Lazy load images and componentsOptimize database queries
+Use CDN for static assets
+
+### X. Security Measures
+
+javascript
+
+
+- Rate limiting
+- Input validation
+- SQL injection prevention
+- XSS protection
+- CORS configuration
+- Authentication middleware
+
+## XI. Tech Stack
+
+### A. Frontend
+- React (Vite) - Core framework
+- TailwindCSS - Styling and UI
+- React Query - Data fetching and cache management
+- React Router - Client-side routing
+- React Hook Form - Form handling and validation
+
+### B. Backend & Infrastructure
+- Supabase
+  - PostgreSQL database
+  - Authentication
+  - Storage
+  - Realtime subscriptions
+- Netlify
+  - Hosting
+  - Form handling
+  - Serverless functions
+
+### C. Optional Add-ons (Cost-Conscious Approach)
+1. Search Implementation
+   - Initial: Supabase full-text search
+   - Future consideration: Algolia only if search volume justifies cost
+
+2. Analytics
+   - Google Analytics (free tier)
+   - Supabase built-in analytics
+   - Simple self-hosted tracking
+
+3. Storage
+   - Supabase storage (included)
+   - Consider AWS S3 only at scale
+
+4. Email
+   - Initial: Resend (generous free tier)
+   - Consider SendGrid only when volume requires
+
+## XII. Open Requirements & Research Needs
+
+### A. Accessibility & UX Requirements (High Priority)
+1. Accessibility Standards
+   - Implement WCAG 2.1 guidelines
+   - Focus on elderly-friendly interface
+   - Screen reader optimization
+   - High contrast options
+   - Adjustable text sizing
+
+2. Browser/Device Support
+   - [TO RESEARCH] Minimum browser versions
+   - [TO RESEARCH] Mobile device requirements
+   - [TO RESEARCH] Tablet optimization needs
+
+3. UX Simplification Goals
+   - Clear, straightforward navigation
+   - Step-by-step guided flows
+   - Help documentation
+   - Support chat integration
+   - Tutorial system
+
+### B. Compliance & Security (High Priority)
+1. Data Protection
+   - [TO RESEARCH] Data retention policies
+   - [TO RESEARCH] GDPR requirements
+   - [TO RESEARCH] CCPA compliance
+   - [TO RESEARCH] Age discrimination prevention measures
+
+2. Verification Systems
+   - [TO DEFINE] Employer verification process
+   - [TO DEFINE] Experience validation approach
+   - [TO DEFINE] Trust & safety measures
+
+### C. Business & Operations (Medium Priority)
+1. Revenue Model Options
+   - Match fee structure
+   - Subscription tiers
+   - Affiliate program potential
+   - [TO RESEARCH] Market rate analysis
+
+2. Content Management
+   - [TO DEFINE] Moderation guidelines
+   - [TO DEFINE] Content removal criteria
+   - [TO DEFINE] Dispute resolution process
+
+### D. Technical Scale Planning (Lower Priority)
+1. Performance Targets
+   - [TO DEFINE] User volume projections
+   - [TO DEFINE] Response time requirements
+   - [TO DEFINE] Uptime guarantees
+
+2. Infrastructure Planning
+   - [TO RESEARCH] Database scaling approach
+   - [TO RESEARCH] CDN implementation
+   - [TO RESEARCH] Cache strategy
+
+## XIII. Technical Standards & Requirements
+
+### A. Browser & Device Support
+- Minimum Browser Versions:
+  - Chrome 90+
+  - Firefox 90+
+  - Safari 14+
+  - Edge 90+
+  - Mobile Safari iOS 14+
+  - Chrome for Android 90+
+- Progressive Enhancement approach
+- Mobile-first responsive design
+- Offline capability for basic features
+
+### B. Performance Standards
+1. Response Time Targets
+   - Page Load: < 2.5s initial load
+   - Time to Interactive: < 3.5s
+   - API Response: < 200ms
+   - First Contentful Paint: < 1.5s
+
+2. Uptime & Reliability
+   - 99.9% uptime guarantee
+   - Automated monitoring
+   - Scheduled maintenance windows
+   - Redundant systems
+
+### C. Data Retention & Privacy
+1. User Data
+   - Active accounts: Retained indefinitely
+   - Deleted accounts: 30-day soft delete, then permanent
+   - Application history: 2 years
+   - Messages: 1 year
+   - Activity logs: 90 days
+
+2. Security Measures
+   - Data encryption at rest (AES-256)
+   - TLS 1.3 for data in transit
+   - Regular security audits
+   - Automated vulnerability scanning
+   - Two-factor authentication option
+
+### D. Cache Strategy
+1. Client-side
+   - React Query cache configuration
+   - Service Worker for offline support
+   - Local storage for user preferences
+   - Memory cache for frequent lookups
+
+2. Server-side
+   - Redis cache for API responses
+   - CDN caching for static assets
+   - Database query caching
+   - Cache invalidation rules
+
+## XIV. Additional Requirements & Considerations
+
+### A. User Support Strategy (High Priority)
+1. Support Channels
+   - [TO DEFINE] Help desk system selection
+   - [TO DEFINE] Phone support requirements
+   - [TO DEFINE] Chat support hours
+   - [TO DEFINE] Response time SLAs
+
+2. User Education
+   - [TO DEFINE] Onboarding process
+   - [TO DEFINE] Tutorial system design
+   - [TO DEFINE] Help documentation structure
+   - [TO DEFINE] Video guide requirements
+
+### B. Quality Assurance (High Priority)
+1. Job Listing Standards
+   - [TO DEFINE] Minimum information requirements
+   - [TO DEFINE] Salary transparency rules
+   - [TO DEFINE] Remote work classification
+   - [TO DEFINE] Age-friendly indicators
+
+2. Testing Requirements
+   - [TO DEFINE] Accessibility testing protocol
+   - [TO DEFINE] Cross-browser testing matrix
+   - [TO DEFINE] Performance testing benchmarks
+   - [TO DEFINE] Security testing schedule
+
+### C. Growth & Marketing (Medium Priority)
+1. SEO Requirements
+   - [TO DEFINE] SEO strategy
+   - [TO DEFINE] Meta data standards
+   - [TO DEFINE] Structured data implementation
+   - [TO DEFINE] URL structure
+
+2. Analytics Implementation
+   - [TO DEFINE] Key metrics to track
+   - [TO DEFINE] Conversion goals
+   - [TO DEFINE] User journey tracking
+   - [TO DEFINE] A/B testing framework
+
+### D. Community & Engagement (Medium Priority)
+1. Social Features
+   - [TO DEFINE] User review system
+   - [TO DEFINE] Employer ratings
+   - [TO DEFINE] Success stories framework
+   - [TO DEFINE] Community guidelines
+
+2. Rewards & Recognition
+   - [TO DEFINE] Employer verification badges
+   - [TO DEFINE] User achievement system
+   - [TO DEFINE] Featured listings criteria
+   - [TO DEFINE] Premium features
+
+## XV. Deployment & DevOps
+
+### A. Environment Strategy
+1. Development Pipeline
+   - Local development
+   - Staging environment
+   - Production environment
+   - Feature branch deployments
+
+2. CI/CD Requirements
+   - Automated testing
+   - Code quality checks
+   - Security scanning
+   - Deployment automation
+
+### B. Monitoring & Alerting
+1. System Monitoring
+   - Error tracking (Sentry)
+   - Performance monitoring
+   - User behavior analytics
+   - Resource utilization
+
+2. Alert Thresholds
+   - Error rate > 1%
+   - Response time > 2s
+   - CPU usage > 80%
+   - Memory usage > 85%
+
+### C. Backup & Recovery
+1. Database Backups
+   - Daily full backups
+   - Point-in-time recovery
+   - Geo-redundant storage
+   - 30-day retention
+
+2. Disaster Recovery
+   - Recovery time objective (RTO): 4 hours
+   - Recovery point objective (RPO): 1 hour
+   - Failover procedures
+   - Emergency contact plan
+
+## XVI. Integration & Third-Party Services
+
+### A. Essential Integrations (Free Tier First)
+1. Email Service
+   - Initial: Resend.com free tier
+   - Basic transactional emails only
+   - Simple email templates
+   - Delivery tracking
+
+2. Analytics
+   - Google Analytics 4 (free)
+   - Basic event tracking
+   - Core conversion tracking
+   - Essential reports
+
+3. Search
+   - Supabase full-text search
+   - Basic filtering
+   - Simple relevance sorting
+   - Pagination support
+
+### B. Future Integrations
+1. Payment Processing (Stripe)
+   - Payment methods
+   - Subscription handling
+   - Invoice generation
+   - Refund processing
+
+2. Document Processing
+   - Resume parsing
+   - Skills extraction
+   - Document validation
+   - Format conversion
+
+## XVII. Project Phases & Timeline
+
+### A. Phase 1: Foundation MVP (2 months)
+1. Core Authentication & Profiles
+   - Basic user signup/login
+   - Simple profile creation (both job seekers & employers)
+   - Email verification
+   - Password reset flow
+
+2. Essential Job Features
+   - Basic job posting form
+   - Simple job listing page
+   - Basic search with filters
+   - Job detail view
+   - Apply via email initially
+   - Basic admin panel
+
+3. Infrastructure Setup
+   - Supabase configuration
+   - Netlify deployment
+   - Error tracking
+   - Google Analytics
+   - Basic SEO setup
+
+### B. Phase 2: Core Experience (2 months)
+1. Enhanced Job Features
+   - Improved search experience
+   - Location-based filtering
+   - Save job functionality
+   - Job alerts via email
+   - Basic application tracking
+
+2. Profile Improvements
+   - Enhanced profile editing
+   - Resume upload
+   - Skills selection
+   - Availability settings
+   - Basic company profiles
+
+3. Quality & Performance
+   - Accessibility improvements
+   - Mobile optimization
+   - Load time optimization
+   - Error handling
+   - Basic analytics tracking
+
+### C. Phase 3: User Experience (2 months)
+1. Communication
+   - Basic messaging system
+   - Email notifications
+   - Application status updates
+   - Basic templates for communications
+
+2. Trust & Safety
+   - Employer verification process
+   - Report functionality
+   - Content moderation tools
+   - Basic fraud prevention
+
+3. User Education
+   - Help documentation
+   - Tooltips and guides
+   - Email onboarding sequence
+   - Basic tutorial system
+
+### D. Phase 4: Monetization & Growth (3 months)
+1. Revenue Features
+   - Basic payment integration
+   - Simple subscription system
+   - Featured job listings
+   - Premium employer profiles
+
+2. Growth Features
+   - Referral system
+   - Social sharing
+   - SEO improvements
+   - Basic content marketing tools
+
+3. Analytics & Optimization
+   - Enhanced tracking
+   - A/B testing framework
+   - Conversion optimization
+   - Performance monitoring
+
+### E. Future Phases
+1. Community Features
+   - Ratings and reviews
+   - Success stories
+   - Community guidelines
+   - Mentorship matching
+
+2. Advanced Features
+   - Advanced matching algorithm
+   - Video interviews
+   - Background checks
+   - Advanced analytics
+
+3. Scale Optimizations
+   - Advanced caching
+   - Infrastructure scaling
+   - Performance optimization
+   - Advanced security measures
+
+## XVIII. Initial Data Requirements
+
+### A. Seed Data
+1. Job Categories
+   - Administrative
+   - Consulting
+   - Customer Service
+   - Education/Training
+   - Professional Services
+   - Part-time Management
+   - Advisory Roles
+   - Mentorship Positions
+
+2. Sample Templates
+   - Job posting templates
+   - Profile templates
+   - Message templates
+   - Email notification templates
+
+### B. MVP Feature Priority Matrix
+
+1. Must-Have (Phase 1)
+   - User registration/auth
+   - Basic profile creation
+   - Simple job posting
+   - Basic search
+   - Apply to job
+   - Email notifications
+
+2. Nice-to-Have (Phase 2+)
+   - Advanced search filters
+   - Messaging system
+   - Rating system
+   - Premium features
+   - Analytics dashboard
+   - Community features
