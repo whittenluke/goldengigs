@@ -24,6 +24,9 @@ export function Header() {
             <Link to="/employer/jobs">
               <Button variant="tertiary">Manage Jobs</Button>
             </Link>
+            <Link to="/employer/applications">
+              <Button variant="tertiary">Applications</Button>
+            </Link>
             <Link to="/employer/profile">
               <Button variant="tertiary">Company Profile</Button>
             </Link>

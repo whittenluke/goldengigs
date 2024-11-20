@@ -13,6 +13,7 @@ import { CreateJobPage } from './pages/jobs/CreateJobPage';
 import { Toaster } from 'react-hot-toast';
 import { ManageJobsPage } from './pages/jobs/ManageJobsPage';
 import { EmployerDashboard } from './pages/employer/Dashboard';
+import { ApplicationsPage } from './pages/employer/Applications';
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,14 @@ function App() {
                   element={
                     <ProtectedRoute userType="employer">
                       <EmployerDashboard />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/employer/applications" 
+                  element={
+                    <ProtectedRoute userType="employer">
+                      <ApplicationsPage />
                     </ProtectedRoute>
                   } 
                 />

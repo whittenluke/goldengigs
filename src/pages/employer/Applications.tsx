@@ -34,13 +34,30 @@ export function ApplicationsPage() {
 
   if (isLoading) return <div>Loading...</div>;
 
+  if (!applications?.length) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h1 className="text-2xl font-bold text-gray-900 mb-8">Applications</h1>
+        
+        <div className="bg-white shadow-sm rounded-lg p-8 text-center">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No Applications Yet
+          </h3>
+          <p className="text-gray-500 mb-4">
+            Applications from job seekers will appear here once they start applying to your jobs.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <h1 className="text-2xl font-bold text-gray-900 mb-8">Applications</h1>
 
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
         <ul className="divide-y divide-gray-200">
-          {applications?.map((application) => (
+          {applications.map((application) => (
             <li key={application.id}>
               <div className="px-4 py-4 sm:px-6">
                 <div className="flex items-center justify-between">
