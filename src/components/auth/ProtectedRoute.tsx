@@ -10,12 +10,12 @@ export function ProtectedRoute({ children, userType }: ProtectedRouteProps) {
   const { user, userDetails, loading } = useAuth();
   const location = useLocation();
 
-  // Show nothing while checking auth status
+  // Show loading state or return null while checking auth
   if (loading) {
-    return null;
+    return <div>Loading...</div>; // Or your loading component
   }
 
-  // Redirect to login if not authenticated
+  // If no user, redirect to login
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }

@@ -34,4 +34,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log* 
+lerna-debug.log*
+
+# Documentation
+SiteDesignDoc.txt
+Roadmap.txt 

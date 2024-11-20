@@ -3,60 +3,43 @@ import { Button } from '../ui/Button';
 import { useAuth } from '../../lib/auth';
 
 export function Header() {
-  const { user, userDetails, signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   const handleSignOut = async () => {
-    console.log('handleSignOut called');
+    console.log('Sign out clicked');
     try {
       await signOut();
+      console.log('Sign out completed');
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
 
   const renderAuthButtons = () => {
-    if (!user) {
+    if (user) {
       return (
-        <>
-          <Link to="/login">
-            <Button variant="secondary">Sign In</Button>
+        <div className="flex items-center gap-4">
+          <Link to="/profile">
+            <Button variant="tertiary">Profile</Button>
           </Link>
-          <Link to="/signup">
-            <Button variant="primary">Get Started</Button>
-          </Link>
-        </>
-      );
-    }
-
-    // Show different options based on user type
-    if (userDetails?.user_type === 'employer') {
-      return (
-        <>
-          <Link to="/employer/jobs/post">
-            <Button variant="primary">Post a Job</Button>
-          </Link>
-          <Link to="/employer/dashboard">
-            <Button variant="secondary">Dashboard</Button>
-          </Link>
-          <Button variant="secondary" onClick={handleSignOut}>
+          <Button 
+            variant="secondary" 
+            onClick={handleSignOut}
+          >
             Sign Out
           </Button>
-        </>
+        </div>
       );
     }
 
-    // JobSeeker options
     return (
       <>
-        <Link to="/saved-jobs">
-          <Button variant="secondary">Saved Jobs</Button>
+        <Link to="/login">
+          <Button variant="tertiary">Log In</Button>
         </Link>
-        <Link to="/applications">
-          <Button variant="secondary">My Applications</Button>
+        <Link to="/signup">
+          <Button variant="primary">Sign Up</Button>
         </Link>
-        <Button variant="secondary" onClick={handleSignOut}>
-          Sign Out
-        </Button>
       </>
     );
   };

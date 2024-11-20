@@ -74,12 +74,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for changes on auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setState(prev => ({ ...prev, user: session?.user ?? null }));
-      if (session?.user) {
-        await fetchUserData(session.user.id);
-      } else {
-        setState(prev => ({ ...prev, profile: null, userDetails: null }));
+      console.log('Auth state changed:', event, session);
+      
+      if (event === 'SIGNED_OUT') {
+        console.log('Setting signed out state');
+        setState({
+          user: null,
+          profile: null,
+          userDetails: null,
+          loading: false
+        });
+        return;
       }
+
+      if (session?.user) {
+        console.log('Setting signed in state');
+        setState(prev => ({ ...prev, user: session.user, loading: true }));
+        await fetchUserData(session.user.id);
+      }
+      
       setState(prev => ({ ...prev, loading: false }));
     });
 
@@ -145,10 +158,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    console.log('Calling supabase.auth.signOut()');
+    console.log('Signing out...');
+    
+    // First clear the state
+    setState({
+      user: null,
+      profile: null,
+      userDetails: null,
+      loading: false
+    });
+
+    // Then sign out from Supabase
     const { error } = await supabase.auth.signOut();
-    console.log('Supabase signOut response:', error || 'Success');
-    if (error) throw error;
+    if (error) {
+      console.error('Sign out error:', error);
+      throw error;
+    }
+    
+    console.log('Sign out successful');
   };
 
   const refreshProfile = async () => {
