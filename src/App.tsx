@@ -14,6 +14,7 @@ import { ManageJobsPage } from './pages/jobs/ManageJobsPage';
 import { EmployerDashboard } from './pages/employer/Dashboard';
 import { ApplicationsPage } from './pages/employer/Applications';
 import { Toast } from './components/ui/Toast';
+import { JobDetailPage } from './pages/jobs/JobDetailPage';
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/search" element={<SearchPage />} />
+                <Route path="/jobs/:id" element={<JobDetailPage />} />
                 <Route 
                   path="/profile" 
                   element={

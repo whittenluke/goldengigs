@@ -1,30 +1,40 @@
-import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { JobSearch } from '../../components/jobs/JobSearch';
 import { JobCard } from '../../components/jobs/JobCard';
+import { supabase } from '../../lib/supabaseClient';
+import { Job } from '../../types/database';
 
-const MOCK_JOBS = [
-  {
-    id: '1',
-    title: 'Senior Project Manager',
-    company: 'Tech Solutions Inc.',
-    location: 'Remote',
-    salary: '$80,000 - $120,000',
-    schedule: 'Part-time / Flexible',
-    description: 'Lead strategic projects with our enterprise clients. Bring your years of experience to mentor junior team members while managing critical initiatives.',
-  },
-  {
-    id: '2',
-    title: 'Business Development Consultant',
-    company: 'Growth Partners LLC',
-    location: 'Hybrid - New York',
-    salary: '$90,000 - $130,000',
-    schedule: 'Contract / 20hrs week',
-    description: 'Leverage your industry connections and expertise to help scale our business consulting practice. Perfect for experienced executives looking for flexible engagement.',
-  },
-];
+function formatJobForCard(job: Job) {
+  return {
+    id: job.id,
+    title: job.title,
+    company: job.employer_profiles.company_name,
+    location: typeof job.location === 'object' && 'city' in job.location 
+      ? `${job.location.city}, ${job.location.state}` 
+      : 'Remote',
+    salary: `$${job.salary_range.min.toLocaleString()} - $${job.salary_range.max.toLocaleString()}`,
+    schedule: job.schedule_type,
+    description: job.description
+  };
+}
 
 export function SearchPage() {
-  const [jobs] = useState(MOCK_JOBS);
+  const { data: jobs, isLoading } = useQuery({
+    queryKey: ['jobs', 'search'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('jobs')
+        .select(`
+          *,
+          employer_profiles (
+            company_name
+          )
+        `)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+      return data || [];
+    }
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -39,9 +49,17 @@ export function SearchPage() {
         <JobSearch onSearch={(data) => console.log(data)} />
 
         <div className="grid gap-6 md:grid-cols-2">
-          {jobs.map((job) => (
-            <JobCard key={job.id} {...job} />
-          ))}
+          {isLoading ? (
+            <div>Loading...</div>
+          ) : jobs?.length === 0 ? (
+            <div className="col-span-2 text-center py-12 text-gray-500">
+              No jobs found. Check back soon for new opportunities!
+            </div>
+          ) : (
+            jobs?.map((job) => (
+              <JobCard key={job.id} {...formatJobForCard(job)} />
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -37,6 +37,18 @@ export interface EmployerProfile {
   updated_at: string;
 }
 
+interface EmployerProfilesJoin {
+  company_name: string;
+  company_size: string;
+  industry: string;
+  location: {
+    city: string;
+    state: string;
+    country: string;
+  };
+  website: string;
+}
+
 export interface Job {
   id: string;
   employer_id: string;
@@ -58,4 +70,5 @@ export interface Job {
   status: string;
   created_at: string;
   expires_at?: string;
+  employer_profiles: EmployerProfilesJoin;
 } 
