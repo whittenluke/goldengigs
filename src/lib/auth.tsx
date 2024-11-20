@@ -11,7 +11,10 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{
+    user: SupabaseUser;
+    session: Session;
+  } | null>;
   signUp: (email: string, password: string, userType: 'employer' | 'jobseeker') => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -100,8 +103,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    console.log('Signing in...');
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    
+    // Wait for user data to be fetched
+    if (data.user) {
+      console.log('Fetching user data...');
+      await fetchUserData(data.user.id);
+    }
+    
+    console.log('Sign in successful');
+    return data;
   };
 
   const signUp = async (email: string, password: string, userType: 'employer' | 'jobseeker') => {

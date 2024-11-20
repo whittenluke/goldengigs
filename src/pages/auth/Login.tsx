@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/Input';
@@ -13,14 +13,31 @@ interface LoginForm {
 export function Login() {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>();
   const [error, setError] = useState<string>();
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      console.log('User already logged in, redirecting...');
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      await signIn(data.email, data.password);
-      navigate('/dashboard');
+      setError(undefined);
+      console.log('Starting sign in...');
+      const response = await signIn(data.email, data.password);
+      console.log('Sign in response:', response);
+      
+      if (response?.user) {
+        console.log('Sign in complete, navigating...');
+        navigate('/', { replace: true });
+      } else {
+        throw new Error('Sign in failed');
+      }
     } catch (err) {
+      console.error('Sign in error:', err);
       setError('Invalid email or password');
     }
   };

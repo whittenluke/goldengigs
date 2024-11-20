@@ -20,16 +20,13 @@ export function SignUp() {
   const onSubmit = async (data: SignUpForm) => {
     try {
       await signUp(data.email, data.password, data.userType);
-      navigate('/dashboard');
-    } catch (err: any) {
-      if (err.message?.includes('user_already_exists')) {
-        setError('This email is already registered. Please try logging in instead.');
-      } else if (err.message?.includes('rate limit')) {
-        setError('Too many signup attempts. Please try again later.');
+      if (data.userType === 'jobseeker') {
+        navigate('/profile/create');
       } else {
-        setError('An error occurred during sign up. Please try again.');
+        navigate('/employer/profile');
       }
-      console.error('Signup error:', err);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
