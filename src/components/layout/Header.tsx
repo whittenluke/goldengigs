@@ -15,15 +15,31 @@ export function Header() {
 
   const renderAuthButtons = () => {
     if (user) {
+      if (userDetails?.user_type === 'employer') {
+        return (
+          <div className="flex items-center gap-4">
+            <Link to="/employer/dashboard">
+              <Button variant="tertiary">Dashboard</Button>
+            </Link>
+            <Link to="/employer/jobs">
+              <Button variant="tertiary">Manage Jobs</Button>
+            </Link>
+            <Link to="/employer/profile">
+              <Button variant="tertiary">Company Profile</Button>
+            </Link>
+            <Button variant="secondary" onClick={handleSignOut}>
+              Sign Out
+            </Button>
+          </div>
+        );
+      }
+
       return (
         <div className="flex items-center gap-4">
-          <Link to={userDetails?.user_type === 'employer' ? '/employer/profile' : '/profile'}>
+          <Link to="/profile">
             <Button variant="tertiary">Profile</Button>
           </Link>
-          <Button 
-            variant="secondary" 
-            onClick={handleSignOut}
-          >
+          <Button variant="secondary" onClick={handleSignOut}>
             Sign Out
           </Button>
         </div>
