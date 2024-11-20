@@ -10,10 +10,10 @@ import { SearchPage } from './pages/jobs/SearchPage';
 import { EmployerProfilePage } from './pages/profile/EmployerProfile';
 import { JobSeekerProfileEditor } from './pages/profile/JobSeekerProfileEditor';
 import { CreateJobPage } from './pages/jobs/CreateJobPage';
-import { Toaster } from 'react-hot-toast';
 import { ManageJobsPage } from './pages/jobs/ManageJobsPage';
 import { EmployerDashboard } from './pages/employer/Dashboard';
 import { ApplicationsPage } from './pages/employer/Applications';
+import { Toast } from './components/ui/Toast';
 
 const queryClient = new QueryClient();
 
@@ -23,7 +23,7 @@ function App() {
       <AuthProvider>
         <Router>
           <div className="min-h-screen bg-gray-50">
-            <Toaster position="top-right" />
+            <Toast />
             <Header />
             <main className="pt-16">
               <Routes>

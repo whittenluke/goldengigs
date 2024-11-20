@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button';
 import { JobCard } from '../../components/jobs/JobCard';
 import { supabase } from '../../lib/supabaseClient';
 import { Job } from '../../types/database';
+import { useAuth } from '../../lib/auth';
 
 function formatJobForCard(job: Job) {
   return {
@@ -20,12 +21,14 @@ function formatJobForCard(job: Job) {
 }
 
 export function ManageJobsPage() {
+  const { user } = useAuth();
   const { data: jobs, isLoading } = useQuery<Job[]>({
     queryKey: ['jobs', 'employer'],
     queryFn: async () => {
       const { data } = await supabase
         .from('jobs')
         .select('*, employer_profiles(company_name)')
+        .eq('employer_id', user?.id)
         .order('created_at', { ascending: false });
       return data || [];
     }
@@ -51,7 +54,7 @@ export function ManageJobsPage() {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         {jobs?.map((job: Job) => (
-          <JobCard key={job.id} {...formatJobForCard(job)} />
+          <JobCard key={job.id} {...formatJobForCard(job)} showActions={true} />
         ))}
       </div>
     </div>

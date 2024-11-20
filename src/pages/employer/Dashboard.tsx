@@ -2,27 +2,33 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { supabase } from '../../lib/supabaseClient';
+import { useAuth } from '../../lib/auth';
 
 export function EmployerDashboard() {
+  const { user } = useAuth();
+  
   const { data: stats } = useQuery({
     queryKey: ['employer', 'dashboard-stats'],
     queryFn: async () => {
-      // Get active jobs count
+      // Get active jobs count for current employer
       const { count: activeJobs } = await supabase
         .from('jobs')
         .select('*', { count: 'exact' })
+        .eq('employer_id', user?.id)
         .eq('status', 'active');
 
-      // Get total applications count
+      // Get total applications count for current employer's jobs
       const { count: totalApplications } = await supabase
         .from('applications')
-        .select('*', { count: 'exact' });
+        .select('*, jobs!inner(*)')
+        .eq('jobs.employer_id', user?.id);
 
       return {
         activeJobs: activeJobs || 0,
         totalApplications: totalApplications || 0
       };
-    }
+    },
+    enabled: !!user // Only run query if user is authenticated
   });
 
   return (
@@ -57,8 +63,6 @@ export function EmployerDashboard() {
           </div>
         </div>
       </div>
-
-      {/* Add recent activity, pending actions, etc. */}
     </div>
   );
 } 
