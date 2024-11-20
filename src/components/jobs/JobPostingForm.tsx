@@ -4,18 +4,15 @@ import { z } from 'zod';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { useCreateJob } from '../../hooks/useCreateJob';
+import { useUpdateJob } from '../../hooks/useUpdateJob';
 import { toast } from 'react-hot-toast';
+import { Job } from '../../types/database';
 
 const jobPostingSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(50, 'Description must be at least 50 characters'),
-  requirements: z.string()
-    .min(1, 'At least one requirement is needed')
-    .transform(str => 
-      str.split('\n')
-         .map(s => s.trim())
-         .filter(s => s.length > 0)
-    ),
+  requirements: z.array(z.string())
+    .min(1, 'At least one requirement is needed'),
   schedule_type: z.string().min(1, 'Schedule type is required'),
   location: z.object({
     type: z.enum(['onsite', 'hybrid', 'remote']),
@@ -41,21 +38,37 @@ const SCHEDULE_OPTIONS = [
   'Remote',
 ];
 
-export function JobPostingForm() {
+interface JobPostingFormProps {
+  mode?: 'create' | 'edit';
+  initialData?: Job;
+}
+
+export function JobPostingForm({ mode = 'create', initialData }: JobPostingFormProps) {
   const createJob = useCreateJob();
+  const updateJob = useUpdateJob(initialData?.id || '');
   
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    watch
+    watch,
+    setValue
   } = useForm<JobPostingFormData>({
     resolver: zodResolver(jobPostingSchema),
-    defaultValues: {
+    defaultValues: initialData ? {
+      title: initialData.title,
+      description: initialData.description,
+      requirements: initialData.requirements,
+      schedule_type: initialData.schedule_type,
+      location: initialData.location,
+      salary_range: initialData.salary_range,
+      is_remote: initialData.is_remote
+    } : {
       is_remote: false,
       location: {
         type: 'onsite'
-      }
+      },
+      requirements: []
     }
   });
 
@@ -63,14 +76,25 @@ export function JobPostingForm() {
 
   const onSubmit = async (data: JobPostingFormData) => {
     try {
-      console.log('Submitting job data:', data);
-      const result = await createJob.mutateAsync(data);
-      console.log('Job creation result:', result);
-      toast.success('Job posted successfully!');
+      if (mode === 'edit') {
+        await updateJob.mutateAsync(data);
+        toast.success('Job updated successfully!');
+      } else {
+        await createJob.mutateAsync(data);
+        toast.success('Job posted successfully!');
+      }
     } catch (error) {
-      console.error('Error posting job:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to post job. Please try again.');
+      console.error('Error saving job:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save job. Please try again.');
     }
+  };
+
+  const handleRequirementsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const reqArray = e.target.value
+      .split('\n')
+      .map(r => r.trim())
+      .filter(r => r.length > 0);
+    setValue('requirements', reqArray);
   };
 
   return (
@@ -161,7 +185,8 @@ export function JobPostingForm() {
           Requirements
         </label>
         <textarea
-          {...register('requirements')}
+          value={Array.isArray(watch('requirements')) ? watch('requirements').join('\n') : ''}
+          onChange={handleRequirementsChange}
           rows={4}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
           placeholder="Enter each requirement on a new line"
@@ -179,7 +204,7 @@ export function JobPostingForm() {
         className="w-full"
         isLoading={isSubmitting}
       >
-        Post Job
+        {mode === 'edit' ? 'Save Changes' : 'Post Job'}
       </Button>
     </form>
   );

@@ -15,6 +15,7 @@ import { EmployerDashboard } from './pages/employer/Dashboard';
 import { ApplicationsPage } from './pages/employer/Applications';
 import { Toast } from './components/ui/Toast';
 import { JobDetailPage } from './pages/jobs/JobDetailPage';
+import { EditJobPage } from './pages/jobs/EditJobPage';
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,14 @@ function App() {
                   element={
                     <ProtectedRoute userType="employer">
                       <ApplicationsPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/employer/jobs/:id/edit" 
+                  element={
+                    <ProtectedRoute userType="employer">
+                      <EditJobPage />
                     </ProtectedRoute>
                   } 
                 />

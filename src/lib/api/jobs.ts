@@ -68,4 +68,41 @@ export async function createJob(jobData: CreateJobData): Promise<Job> {
   if (!data) throw new Error('Failed to create job');
   
   return data as Job;
+}
+
+export async function updateJob(jobId: string, jobData: Partial<CreateJobData>): Promise<Job> {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('Not authenticated');
+  }
+
+  const { data, error } = await supabase
+    .from('jobs')
+    .update({
+      title: jobData.title,
+      description: jobData.description,
+      requirements: jobData.requirements,
+      schedule_type: jobData.schedule_type,
+      location: jobData.location,
+      salary_range: jobData.salary_range,
+      is_remote: jobData.is_remote,
+    })
+    .eq('id', jobId)
+    .eq('employer_id', user.id) // Ensure user can only edit their own jobs
+    .select(`
+      *,
+      employer_profiles (
+        company_name
+      )
+    `)
+    .single();
+
+  if (error) {
+    console.error('Supabase error:', error);
+    throw new Error(error.message);
+  }
+  if (!data) throw new Error('Failed to update job');
+  
+  return data as Job;
 } 

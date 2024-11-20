@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../lib/auth';
@@ -7,6 +7,7 @@ import { Job } from '../../types/database';
 
 export function JobDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user, userDetails } = useAuth();
   
   const { data: job, isLoading } = useQuery<Job>({
@@ -37,6 +38,10 @@ export function JobDetailPage() {
 
   const isEmployerView = userDetails?.user_type === 'employer' && user?.id === job.employer_id;
 
+  const handleEdit = () => {
+    navigate(`/employer/jobs/${id}/edit`);
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Header Section */}
@@ -60,7 +65,7 @@ export function JobDetailPage() {
           
           {isEmployerView ? (
             <div className="flex gap-3">
-              <Button variant="secondary" onClick={() => {/* TODO: Implement edit */}}>
+              <Button variant="secondary" onClick={handleEdit}>
                 Edit Job
               </Button>
               <Button variant="secondary" onClick={() => {/* TODO: Implement status toggle */}}>
