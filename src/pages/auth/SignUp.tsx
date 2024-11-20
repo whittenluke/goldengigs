@@ -21,8 +21,15 @@ export function SignUp() {
     try {
       await signUp(data.email, data.password, data.userType);
       navigate('/dashboard');
-    } catch (err) {
-      setError('An error occurred during sign up');
+    } catch (err: any) {
+      if (err.message?.includes('user_already_exists')) {
+        setError('This email is already registered. Please try logging in instead.');
+      } else if (err.message?.includes('rate limit')) {
+        setError('Too many signup attempts. Please try again later.');
+      } else {
+        setError('An error occurred during sign up. Please try again.');
+      }
+      console.error('Signup error:', err);
     }
   };
 
@@ -39,6 +46,14 @@ export function SignUp() {
           {error && (
             <div className="rounded-md bg-red-50 p-4">
               <p className="text-sm text-red-700">{error}</p>
+              {error.includes('already registered') && (
+                <Link 
+                  to="/login" 
+                  className="mt-2 text-sm font-medium text-red-700 hover:text-red-600"
+                >
+                  Go to login →
+                </Link>
+              )}
             </div>
           )}
           

@@ -7,9 +7,8 @@ import { Home } from './pages/Home';
 import { Login } from './pages/auth/Login';
 import { SignUp } from './pages/auth/SignUp';
 import { SearchPage } from './pages/jobs/SearchPage';
-import { JobSeekerProfilePage } from './pages/profile/JobSeekerProfile';
 import { EmployerProfilePage } from './pages/profile/EmployerProfile';
-import { JobSeekerProfileForm } from './pages/profile/JobSeekerProfileForm';
+import { JobSeekerProfileEditor } from './pages/profile/JobSeekerProfileEditor';
 
 const queryClient = new QueryClient();
 
@@ -30,7 +29,7 @@ function App() {
                   path="/profile" 
                   element={
                     <ProtectedRoute userType="jobseeker">
-                      <JobSeekerProfilePage />
+                      <JobSeekerProfileEditor mode="edit" />
                     </ProtectedRoute>
                   } 
                 />
@@ -46,7 +45,7 @@ function App() {
                   path="/profile/create" 
                   element={
                     <ProtectedRoute userType="jobseeker">
-                      <JobSeekerProfileForm />
+                      <JobSeekerProfileEditor mode="create" />
                     </ProtectedRoute>
                   } 
                 />

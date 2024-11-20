@@ -5,6 +5,15 @@ import { useAuth } from '../../lib/auth';
 export function Header() {
   const { user, userDetails, signOut } = useAuth();
 
+  const handleSignOut = async () => {
+    console.log('handleSignOut called');
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   const renderAuthButtons = () => {
     if (!user) {
       return (
@@ -29,7 +38,7 @@ export function Header() {
           <Link to="/employer/dashboard">
             <Button variant="secondary">Dashboard</Button>
           </Link>
-          <Button variant="secondary" onClick={() => signOut()}>
+          <Button variant="secondary" onClick={handleSignOut}>
             Sign Out
           </Button>
         </>
@@ -45,7 +54,7 @@ export function Header() {
         <Link to="/applications">
           <Button variant="secondary">My Applications</Button>
         </Link>
-        <Button variant="secondary" onClick={() => signOut()}>
+        <Button variant="secondary" onClick={handleSignOut}>
           Sign Out
         </Button>
       </>

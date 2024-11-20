@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getInitialSession();
 
     // Listen for changes on auth state
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setState(prev => ({ ...prev, user: session?.user ?? null }));
       if (session?.user) {
         await fetchUserData(session.user.id);
@@ -92,33 +92,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, userType: 'employer' | 'jobseeker') => {
-    const { error, data } = await supabase.auth.signUp({ email, password });
-    if (error) throw error;
-    
-    if (data.user) {
-      // Create user record
-      const { error: userError } = await supabase
-        .from('users')
-        .insert([{ 
-          id: data.user.id,
-          email,
-          user_type: userType,
-        }]);
+    try {
+      const { error, data } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          // Add this to bypass email confirmation in development
+          data: {
+            user_type: userType
+          }
+        }
+      });
       
-      if (userError) throw userError;
+      if (error) {
+        console.error('Signup error:', error);
+        if (error.message.includes('rate limit')) {
+          throw new Error('Too many signup attempts. Please try again later.');
+        }
+        throw error;
+      }
+      
+      if (data.user) {
+        // Create user record
+        const { error: userError } = await supabase
+          .from('users')
+          .insert([{ 
+            id: data.user.id,
+            email,
+            user_type: userType,
+          }]);
+        
+        if (userError) {
+          console.error('User creation error:', userError);
+          throw userError;
+        }
 
-      // Create profile record
-      const profileTable = userType === 'employer' ? 'employer_profiles' : 'jobseeker_profiles';
-      const { error: profileError } = await supabase
-        .from(profileTable)
-        .insert([{ id: data.user.id }]);
-      
-      if (profileError) throw profileError;
+        // Create profile record
+        const profileTable = userType === 'employer' ? 'employer_profiles' : 'jobseeker_profiles';
+        const { error: profileError } = await supabase
+          .from(profileTable)
+          .insert([{ id: data.user.id }]);
+        
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          throw profileError;
+        }
+      }
+    } catch (error) {
+      console.error('Full signup error:', error);
+      throw error;
     }
   };
 
   const signOut = async () => {
+    console.log('Calling supabase.auth.signOut()');
     const { error } = await supabase.auth.signOut();
+    console.log('Supabase signOut response:', error || 'Success');
     if (error) throw error;
   };
 
