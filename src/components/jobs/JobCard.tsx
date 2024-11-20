@@ -14,6 +14,7 @@ export interface JobCardProps {
   schedule: string;
   description: string;
   showActions?: boolean;
+  status?: string;
 }
 
 export function JobCard({ 
@@ -24,7 +25,8 @@ export function JobCard({
   salary, 
   schedule, 
   description,
-  showActions = false
+  showActions = false,
+  status
 }: JobCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { mutate: deleteJob, isLoading: isDeleting } = useDeleteJob();
@@ -39,9 +41,21 @@ export function JobCard({
         <div className="space-y-3">
           <div className="flex justify-between items-start">
             <div>
-              <Link to={`/jobs/${id}`} className="text-xl font-semibold text-gray-900 hover:text-primary-600">
-                {title}
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link to={`/jobs/${id}`} className="text-xl font-semibold text-gray-900 hover:text-primary-600">
+                  {title}
+                </Link>
+                {status && (
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                    ${status === 'active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {status}
+                  </span>
+                )}
+              </div>
               <p className="text-base font-medium text-gray-700">{company}</p>
             </div>
             {showActions && (

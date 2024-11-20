@@ -105,4 +105,33 @@ export async function updateJob(jobId: string, jobData: Partial<CreateJobData>):
   if (!data) throw new Error('Failed to update job');
   
   return data as Job;
+}
+
+export async function updateJobStatus(jobId: string, status: 'active' | 'inactive'): Promise<Job> {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('Not authenticated');
+  }
+
+  const { data, error } = await supabase
+    .from('jobs')
+    .update({ status })
+    .eq('id', jobId)
+    .eq('employer_id', user.id)
+    .select(`
+      *,
+      employer_profiles (
+        company_name
+      )
+    `)
+    .single();
+
+  if (error) {
+    console.error('Supabase error:', error);
+    throw new Error(error.message);
+  }
+  if (!data) throw new Error('Failed to update job status');
+  
+  return data as Job;
 } 

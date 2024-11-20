@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../lib/auth';
 import { Button } from '../../components/ui/Button';
 import { Job } from '../../types/database';
+import { useUpdateJobStatus } from '../../hooks/useUpdateJobStatus';
+import { toast } from 'react-hot-toast';
 
 export function JobDetailPage() {
   const { id } = useParams();
@@ -33,8 +35,21 @@ export function JobDetailPage() {
     }
   });
 
+  const updateStatus = useUpdateJobStatus(id!);
+
   if (isLoading) return <div>Loading...</div>;
   if (!job) return <div>Job not found</div>;
+
+  const handleStatusToggle = async () => {
+    try {
+      const newStatus = job.status === 'active' ? 'inactive' : 'active';
+      await updateStatus.mutateAsync(newStatus);
+      toast.success(`Job ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`);
+    } catch (error) {
+      console.error('Error updating job status:', error);
+      toast.error('Failed to update job status');
+    }
+  };
 
   const isEmployerView = userDetails?.user_type === 'employer' && user?.id === job.employer_id;
 
@@ -68,7 +83,11 @@ export function JobDetailPage() {
               <Button variant="secondary" onClick={handleEdit}>
                 Edit Job
               </Button>
-              <Button variant="secondary" onClick={() => {/* TODO: Implement status toggle */}}>
+              <Button 
+                variant="secondary" 
+                onClick={handleStatusToggle}
+                isLoading={updateStatus.isLoading}
+              >
                 {job.status === 'active' ? 'Deactivate' : 'Activate'}
               </Button>
             </div>

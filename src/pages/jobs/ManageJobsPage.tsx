@@ -10,13 +10,14 @@ function formatJobForCard(job: Job) {
   return {
     id: job.id,
     title: job.title,
-    company: 'Your Company', // TODO: Join with employer_profiles to get company name
+    company: job.employer_profiles.company_name,
     location: typeof job.location === 'object' && 'city' in job.location 
       ? `${job.location.city}, ${job.location.state}` 
       : 'Remote',
     salary: `$${job.salary_range.min.toLocaleString()} - $${job.salary_range.max.toLocaleString()}`,
     schedule: job.schedule_type,
-    description: job.description
+    description: job.description,
+    status: job.status
   };
 }
 
