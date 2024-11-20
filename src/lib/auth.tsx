@@ -188,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw error;
     }
     
+    // Note: No navigation here - let components handle their own navigation
     console.log('Sign out successful');
   };
 
