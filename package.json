@@ -13,12 +13,14 @@
   "dependencies": {
     "@headlessui/react": "^1.7.19",
     "@heroicons/react": "^2.2.0",
+    "@hookform/resolvers": "^3.9.1",
     "@supabase/supabase-js": "^2.46.1",
     "@tanstack/react-query": "^4.36.1",
     "clsx": "^2.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.53.2",
+    "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.28.0",
     "tailwind-merge": "^1.14.0",
     "zod": "^3.22.4"

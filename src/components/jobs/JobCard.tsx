@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { CalendarIcon, MapPinIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 
-interface JobCardProps {
+export interface JobCardProps {
   id: string;
   title: string;
   company: string;
@@ -11,7 +11,15 @@ interface JobCardProps {
   description: string;
 }
 
-export function JobCard({ id, title, company, location, salary, schedule, description }: JobCardProps) {
+export function JobCard({ 
+  id, 
+  title, 
+  company, 
+  location, 
+  salary, 
+  schedule, 
+  description 
+}: JobCardProps) {
   return (
     <div className="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow">
       <div className="space-y-3">

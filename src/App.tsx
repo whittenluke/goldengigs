@@ -9,6 +9,9 @@ import { SignUp } from './pages/auth/SignUp';
 import { SearchPage } from './pages/jobs/SearchPage';
 import { EmployerProfilePage } from './pages/profile/EmployerProfile';
 import { JobSeekerProfileEditor } from './pages/profile/JobSeekerProfileEditor';
+import { CreateJobPage } from './pages/jobs/CreateJobPage';
+import { Toaster } from 'react-hot-toast';
+import { ManageJobsPage } from './pages/jobs/ManageJobsPage';
 
 const queryClient = new QueryClient();
 
@@ -18,6 +21,7 @@ function App() {
       <AuthProvider>
         <Router>
           <div className="min-h-screen bg-gray-50">
+            <Toaster position="top-right" />
             <Header />
             <main className="pt-16">
               <Routes>
@@ -46,6 +50,22 @@ function App() {
                   element={
                     <ProtectedRoute userType="jobseeker">
                       <JobSeekerProfileEditor mode="create" />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/jobs/create" 
+                  element={
+                    <ProtectedRoute userType="employer">
+                      <CreateJobPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/employer/jobs" 
+                  element={
+                    <ProtectedRoute userType="employer">
+                      <ManageJobsPage />
                     </ProtectedRoute>
                   } 
                 />
