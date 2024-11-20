@@ -19,13 +19,30 @@ export function SignUp() {
 
   const onSubmit = async (data: SignUpForm) => {
     try {
-      await signUp(data.email, data.password, data.userType);
-      if (data.userType === 'jobseeker') {
-        navigate('/profile/create');
+      console.log('Submitting signup form...', { 
+        email: data.email, 
+        userType: data.userType 
+      });
+      const result = await signUp(data.email, data.password, data.userType);
+      console.log('Signup result:', {
+        user: result.user ? { 
+          id: result.user.id,
+          email: result.user.email 
+        } : null,
+        session: result.session ? 'exists' : null
+      });
+      
+      if (result.user) {
+        if (data.userType === 'jobseeker') {
+          navigate('/profile/create');
+        } else {
+          navigate('/employer/profile');
+        }
       } else {
-        navigate('/employer/profile');
+        setError('Failed to create account');
       }
     } catch (err) {
+      console.error('Signup error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };

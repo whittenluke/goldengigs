@@ -15,7 +15,10 @@ interface AuthContextType extends AuthState {
     user: SupabaseUser;
     session: Session;
   } | null>;
-  signUp: (email: string, password: string, userType: 'employer' | 'jobseeker') => Promise<void>;
+  signUp: (email: string, password: string, userType: 'employer' | 'jobseeker') => Promise<{
+    user: SupabaseUser | null;
+    session: Session | null;
+  }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   createJobSeekerProfile: (data: Partial<JobSeekerProfile>) => Promise<void>;
@@ -62,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const getInitialSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('Initial session check:', session?.user?.id);
         setState(prev => ({ ...prev, user: session?.user ?? null }));
         if (session?.user) {
           await fetchUserData(session.user.id);
@@ -77,26 +81,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for changes on auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session);
+      console.log('Auth state changed:', event);
       
-      if (event === 'SIGNED_OUT') {
-        console.log('Setting signed out state');
+      if (event === 'SIGNED_IN') {
+        if (session?.user) {
+          setState(prev => ({ ...prev, user: session.user }));
+          // Don't fetch user data here - let signUp handle it
+        }
+      } else if (event === 'SIGNED_OUT') {
         setState({
           user: null,
           profile: null,
           userDetails: null,
           loading: false
         });
-        return;
       }
-
-      if (session?.user) {
-        console.log('Setting signed in state');
-        setState(prev => ({ ...prev, user: session.user, loading: true }));
-        await fetchUserData(session.user.id);
-      }
-      
-      setState(prev => ({ ...prev, loading: false }));
     });
 
     return () => subscription.unsubscribe();
@@ -119,53 +118,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, userType: 'employer' | 'jobseeker') => {
     try {
-      const { error, data } = await supabase.auth.signUp({ 
+      const { error: authError, data } = await supabase.auth.signUp({ 
         email, 
         password,
-        options: {
-          // Add this to bypass email confirmation in development
-          data: {
-            user_type: userType
-          }
-        }
       });
       
-      if (error) {
-        console.error('Signup error:', error);
-        if (error.message.includes('rate limit')) {
-          throw new Error('Too many signup attempts. Please try again later.');
-        }
-        throw error;
-      }
-      
-      if (data.user) {
-        // Create user record
-        const { error: userError } = await supabase
-          .from('users')
-          .insert([{ 
-            id: data.user.id,
-            email,
-            user_type: userType,
-          }]);
-        
-        if (userError) {
-          console.error('User creation error:', userError);
-          throw userError;
-        }
+      if (authError) throw authError;
+      if (!data.user) throw new Error('No user returned from signup');
 
-        // Create profile record
-        const profileTable = userType === 'employer' ? 'employer_profiles' : 'jobseeker_profiles';
-        const { error: profileError } = await supabase
-          .from(profileTable)
-          .insert([{ id: data.user.id }]);
-        
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          throw profileError;
-        }
-      }
+      // Create user record
+      const { error: userError } = await supabase
+        .from('users')
+        .insert([{ 
+          id: data.user.id,
+          email,
+          user_type: userType,
+        }]);
+      
+      if (userError) throw userError;
+
+      // Create profile record
+      const profileTable = userType === 'employer' ? 'employer_profiles' : 'jobseeker_profiles';
+      const { error: profileError } = await supabase
+        .from(profileTable)
+        .insert([{ id: data.user.id }]);
+      
+      if (profileError) throw profileError;
+
+      // Fetch the user data after creating records
+      await fetchUserData(data.user.id);
+
+      return data;
     } catch (error) {
-      console.error('Full signup error:', error);
+      console.error('Signup failed:', error);
       throw error;
     }
   };

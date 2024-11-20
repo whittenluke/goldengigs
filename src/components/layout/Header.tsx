@@ -3,13 +3,11 @@ import { Button } from '../ui/Button';
 import { useAuth } from '../../lib/auth';
 
 export function Header() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, userDetails } = useAuth();
 
   const handleSignOut = async () => {
-    console.log('Sign out clicked');
     try {
       await signOut();
-      console.log('Sign out completed');
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -19,7 +17,7 @@ export function Header() {
     if (user) {
       return (
         <div className="flex items-center gap-4">
-          <Link to="/profile">
+          <Link to={userDetails?.user_type === 'employer' ? '/employer/profile' : '/profile'}>
             <Button variant="tertiary">Profile</Button>
           </Link>
           <Button 
