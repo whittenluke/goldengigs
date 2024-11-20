@@ -3,18 +3,17 @@ import { useForm } from 'react-hook-form';
 import { useAuth } from '../../lib/auth';
 import { supabase } from '../../lib/supabaseClient';
 import { uploadResume } from '../../lib/storage';
-import { JobSeekerProfile } from '../../types/database';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 
-interface ProfileFormData {
+type ProfileFormData = {
   full_name: string;
   years_experience: number;
   skills: string;
   preferred_schedule: string[];
   bio: string;
   availability_status: string;
-}
+};
 
 export function JobSeekerProfilePage() {
   const { user, userDetails, refreshProfile } = useAuth();

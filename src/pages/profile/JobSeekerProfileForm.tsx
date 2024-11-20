@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/auth';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import type { JobSeekerProfile } from '../../types/database';
 import { MultiSelect } from '../../components/ui/MultiSelect';
 import { useState } from 'react';
 import { Switch } from '@headlessui/react';

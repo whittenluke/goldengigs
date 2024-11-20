@@ -5,7 +5,7 @@ export async function uploadResume(file: File, userId: string) {
   const fileName = `${userId}-${Math.random()}.${fileExt}`;
   const filePath = `resumes/${fileName}`;
 
-  const { error: uploadError, data } = await supabase.storage
+  const { error: uploadError } = await supabase.storage
     .from('resumes')
     .upload(filePath, file, {
       cacheControl: '3600',
