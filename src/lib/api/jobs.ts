@@ -20,9 +20,18 @@ interface CreateJobData {
 }
 
 export async function createJob(jobData: CreateJobData): Promise<Job> {
+  // First get the current user
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('Not authenticated');
+  }
+
+  // Get the employer profile using the user's ID
   const { data: profile } = await supabase
     .from('employer_profiles')
     .select('id')
+    .eq('id', user.id)
     .single();
 
   if (!profile) {
@@ -33,10 +42,10 @@ export async function createJob(jobData: CreateJobData): Promise<Job> {
     .from('jobs')
     .insert([
       {
-        employer_id: profile.id,
+        employer_id: user.id, // Use the authenticated user's ID
         title: jobData.title,
         description: jobData.description,
-        requirements: jobData.requirements,
+        requirements: jobData.requirements || [], // Ensure requirements is an array
         schedule_type: jobData.schedule_type,
         location: jobData.location,
         salary_range: jobData.salary_range,
@@ -44,10 +53,18 @@ export async function createJob(jobData: CreateJobData): Promise<Job> {
         status: 'active'
       }
     ])
-    .select()
+    .select(`
+      *,
+      employer_profiles (
+        company_name
+      )
+    `)
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Supabase error:', error);
+    throw new Error(error.message);
+  }
   if (!data) throw new Error('Failed to create job');
   
   return data as Job;
