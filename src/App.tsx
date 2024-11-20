@@ -56,7 +56,7 @@ function App() {
                   } 
                 />
                 <Route 
-                  path="/jobs/create" 
+                  path="/employer/jobs/create" 
                   element={
                     <ProtectedRoute userType="employer">
                       <CreateJobPage />

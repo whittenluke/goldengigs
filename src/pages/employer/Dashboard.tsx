@@ -29,7 +29,7 @@ export function EmployerDashboard() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="sm:flex sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Employer Dashboard</h1>
-        <Link to="/jobs/create">
+        <Link to="/employer/jobs/create">
           <Button>Post New Job</Button>
         </Link>
       </div>

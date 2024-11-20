@@ -43,7 +43,7 @@ export function ManageJobsPage() {
           </p>
         </div>
         <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-          <Link to="/jobs/create">
+          <Link to="/employer/jobs/create">
             <Button>Post New Job</Button>
           </Link>
         </div>
