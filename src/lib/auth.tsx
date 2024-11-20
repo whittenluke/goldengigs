@@ -15,6 +15,7 @@ interface AuthContextType extends AuthState {
   signUp: (email: string, password: string, userType: 'employer' | 'jobseeker') => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  createJobSeekerProfile: (data: Partial<JobSeekerProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -127,14 +128,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const createJobSeekerProfile = async (data: Partial<JobSeekerProfile>) => {
+    if (!state.user) throw new Error('No user logged in');
+    
+    const { error } = await supabase
+      .from('jobseeker_profiles')
+      .insert([
+        {
+          id: state.user.id,
+          ...data,
+        }
+      ]);
+
+    if (error) throw error;
+    await refreshProfile();
+  };
+
+  const value = {
+    ...state,
+    signIn,
+    signUp,
+    signOut,
+    refreshProfile,
+    createJobSeekerProfile,
+  };
+
   return (
-    <AuthContext.Provider value={{ 
-      ...state,
-      signIn,
-      signUp,
-      signOut,
-      refreshProfile,
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
