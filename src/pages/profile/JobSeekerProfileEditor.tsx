@@ -182,7 +182,6 @@ export function JobSeekerProfileEditor({ mode }: ProfileEditorProps) {
             options={SKILL_OPTIONS}
             value={skills}
             onChange={setSkills}
-            error={skills.length === 0 ? 'Please select at least one skill' : undefined}
           />
 
           <MultiSelect
@@ -190,7 +189,6 @@ export function JobSeekerProfileEditor({ mode }: ProfileEditorProps) {
             options={SCHEDULE_OPTIONS}
             value={schedules}
             onChange={setSchedules}
-            error={schedules.length === 0 ? 'Please select at least one schedule preference' : undefined}
           />
 
           <div className="space-y-6">

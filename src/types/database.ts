@@ -71,4 +71,15 @@ export interface Job {
   created_at: string;
   expires_at?: string;
   employer_profiles: EmployerProfilesJoin;
+}
+
+export interface Application {
+  id: string;
+  job_id: string;
+  user_id: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+  created_at: string;
+  withdrawn_at?: string;
+  withdrawal_reason?: string;
+  job?: Job;
 } 

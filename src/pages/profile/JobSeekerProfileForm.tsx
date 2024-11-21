@@ -1,5 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { toast } from 'react-hot-toast';
 import { useAuth } from '../../lib/auth';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -7,17 +10,26 @@ import { MultiSelect } from '../../components/ui/MultiSelect';
 import { useState } from 'react';
 import { Switch } from '@headlessui/react';
 
-type ProfileFormData = {
-  years_experience: number;
-  skills: string[];
-  preferred_schedule: string[];
-  preferred_location: {
-    city: string;
-    remote?: boolean;
-  };
-  availability_status: string;
-  bio: string;
-};
+// Validation schema
+const profileSchema = z.object({
+  years_experience: z.number()
+    .min(0, 'Years of experience must be 0 or greater')
+    .max(60, 'Please enter a valid number of years'),
+  bio: z.string()
+    .min(50, 'Bio must be at least 50 characters')
+    .max(500, 'Bio must be less than 500 characters'),
+  skills: z.array(z.string()),
+  preferred_schedule: z.array(z.string()),
+  preferred_location: z.object({
+    city: z.string()
+      .min(2, 'City name must be at least 2 characters')
+      .max(50, 'City name must be less than 50 characters'),
+    remote: z.boolean().optional()
+  }),
+  availability_status: z.enum(['available', 'open', 'unavailable'])
+});
+
+type ProfileFormData = z.infer<typeof profileSchema>;
 
 const SKILL_OPTIONS = [
   'Project Management',
@@ -50,10 +62,48 @@ const SCHEDULE_OPTIONS = [
 export function JobSeekerProfileForm() {
   const { createJobSeekerProfile } = useAuth();
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ProfileFormData>();
   const [skills, setSkills] = useState<string[]>([]);
   const [schedules, setSchedules] = useState<string[]>([]);
   const [isRemote, setIsRemote] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setValue,
+    watch
+  } = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      years_experience: 0,
+      skills: [],
+      preferred_schedule: [],
+      preferred_location: {
+        city: '',
+        remote: false
+      },
+      availability_status: 'open',
+      bio: ''
+    },
+    mode: 'onSubmit'
+  });
+
+  const bioLength = watch('bio')?.length || 0;
+
+  // Update form values when skills/schedules change
+  const handleSkillsChange = (newSkills: string[]) => {
+    setSkills(newSkills);
+    setValue('skills', newSkills, { 
+      shouldValidate: false // Prevent validation on change
+    });
+  };
+
+  const handleSchedulesChange = (newSchedules: string[]) => {
+    setSchedules(newSchedules);
+    setValue('preferred_schedule', newSchedules, { 
+      shouldValidate: false // Prevent validation on change
+    });
+  };
 
   const onSubmit = async (data: ProfileFormData) => {
     try {
@@ -66,10 +116,11 @@ export function JobSeekerProfileForm() {
           remote: isRemote
         }
       });
+      toast.success('Profile created successfully');
       navigate('/dashboard');
     } catch (error) {
       console.error('Error creating profile:', error);
-      // TODO: Add error handling UI
+      toast.error(error instanceof Error ? error.message : 'Failed to create profile');
     }
   };
 
@@ -87,10 +138,7 @@ export function JobSeekerProfileForm() {
           <Input
             label="Years of Experience"
             type="number"
-            {...register('years_experience', { 
-              required: 'Years of experience is required',
-              min: { value: 0, message: 'Must be 0 or greater' }
-            })}
+            {...register('years_experience', { valueAsNumber: true })}
             error={errors.years_experience?.message}
           />
 
@@ -99,13 +147,16 @@ export function JobSeekerProfileForm() {
               Availability Status
             </label>
             <select
-              {...register('availability_status', { required: 'Status is required' })}
+              {...register('availability_status')}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
             >
               <option value="available">Available Now</option>
               <option value="open">Open to Opportunities</option>
               <option value="unavailable">Not Available</option>
             </select>
+            {errors.availability_status && (
+              <p className="mt-1 text-sm text-red-600">{errors.availability_status.message}</p>
+            )}
           </div>
 
           <div>
@@ -113,10 +164,7 @@ export function JobSeekerProfileForm() {
               Bio
             </label>
             <textarea
-              {...register('bio', { 
-                required: 'Bio is required',
-                maxLength: { value: 500, message: 'Bio must be less than 500 characters' }
-              })}
+              {...register('bio')}
               rows={4}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               placeholder="Tell employers about your experience and what you're looking for..."
@@ -124,30 +172,31 @@ export function JobSeekerProfileForm() {
             {errors.bio && (
               <p className="mt-1 text-sm text-red-600">{errors.bio.message}</p>
             )}
+            <p className="mt-1 text-sm text-gray-500">
+              {500 - bioLength} characters remaining
+            </p>
           </div>
 
           <MultiSelect
             label="Skills"
             options={SKILL_OPTIONS}
             value={skills}
-            onChange={setSkills}
-            error={skills.length === 0 ? 'Please select at least one skill' : undefined}
+            onChange={handleSkillsChange}
+            maxItems={10}
           />
 
           <MultiSelect
             label="Preferred Schedule"
             options={SCHEDULE_OPTIONS}
             value={schedules}
-            onChange={setSchedules}
-            error={schedules.length === 0 ? 'Please select at least one schedule preference' : undefined}
+            onChange={handleSchedulesChange}
+            maxItems={5}
           />
 
           <div className="space-y-6">
             <Input
               label="Preferred City"
-              {...register('preferred_location.city', { 
-                required: 'City is required' 
-              })}
+              {...register('preferred_location.city')}
               error={errors.preferred_location?.city?.message}
             />
 
@@ -160,7 +209,10 @@ export function JobSeekerProfileForm() {
               </span>
               <Switch
                 checked={isRemote}
-                onChange={setIsRemote}
+                onChange={(checked) => {
+                  setIsRemote(checked);
+                  setValue('preferred_location.remote', checked);
+                }}
                 className={`${
                   isRemote ? 'bg-primary-600' : 'bg-gray-200'
                 } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2`}

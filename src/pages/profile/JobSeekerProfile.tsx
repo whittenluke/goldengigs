@@ -1,15 +1,44 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../lib/auth';
 import { supabase } from '../../lib/supabaseClient';
 import { uploadResume } from '../../lib/storage';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { MultiSelect } from '../../components/ui/MultiSelect';
+
+const SKILL_OPTIONS = [
+  'Project Management',
+  'Leadership',
+  'Strategic Planning',
+  'Team Management',
+  'Business Development',
+  'Sales',
+  'Marketing',
+  'Customer Service',
+  'Operations',
+  'Finance',
+  'Human Resources',
+  'Consulting',
+  'Training',
+  'Mentoring',
+];
+
+const SCHEDULE_OPTIONS = [
+  'Full-time',
+  'Part-time',
+  'Contract',
+  'Temporary',
+  'Flexible',
+  'Remote',
+  'Weekends',
+  'Evenings',
+];
 
 type ProfileFormData = {
   full_name: string;
   years_experience: number;
-  skills: string;
+  skills: string[];
   preferred_schedule: string[];
   bio: string;
   availability_status: string;
@@ -17,9 +46,63 @@ type ProfileFormData = {
 
 export function JobSeekerProfilePage() {
   const { user, userDetails, refreshProfile } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [uploadError, setUploadError] = useState<string>();
-  const { register, handleSubmit, formState: { errors } } = useForm<ProfileFormData>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [selectedSchedules, setSelectedSchedules] = useState<string[]>([]);
+
+  const { register, handleSubmit, reset } = useForm<ProfileFormData>({
+    defaultValues: {
+      full_name: '',
+      years_experience: 0,
+      bio: '',
+      availability_status: 'available'
+    }
+  });
+
+  // Fetch initial profile data
+  useEffect(() => {
+    async function fetchProfile() {
+      if (!user?.id) return;
+      
+      setIsLoading(true);
+      try {
+        const { data } = await supabase
+          .from('jobseeker_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (data) {
+          setSelectedSkills(data.skills || []);
+          setSelectedSchedules(data.preferred_schedule || []);
+          // Reset form with fetched data
+          reset({
+            full_name: userDetails?.full_name || '',
+            years_experience: data.years_experience || 0,
+            bio: data.bio || '',
+            availability_status: data.availability_status || 'available'
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchProfile();
+    
+    // Cleanup function
+    return () => {
+      setSelectedSkills([]);
+      setSelectedSchedules([]);
+    };
+  }, [user?.id, userDetails, reset]);
+
+  // Don't render form until initial load is complete
+  if (isLoading) {
+    return <div className="max-w-2xl mx-auto px-4 py-12">Loading...</div>;
+  }
 
   const onSubmit = async (data: ProfileFormData) => {
     if (!user) return;
@@ -34,13 +117,13 @@ export function JobSeekerProfilePage() {
 
       if (userError) throw userError;
 
-      // Update profile
+      // Update profile with selected skills and schedules
       const { error: profileError } = await supabase
         .from('jobseeker_profiles')
         .update({
           years_experience: data.years_experience,
-          skills: data.skills.split(',').map(s => s.trim()),
-          preferred_schedule: data.preferred_schedule,
+          skills: selectedSkills,
+          preferred_schedule: selectedSchedules,
           bio: data.bio,
           availability_status: data.availability_status,
         })
@@ -61,7 +144,6 @@ export function JobSeekerProfilePage() {
     if (!file || !user) return;
 
     setIsLoading(true);
-    setUploadError(undefined);
 
     try {
       const filePath = await uploadResume(file, user.id);
@@ -76,7 +158,6 @@ export function JobSeekerProfilePage() {
       await refreshProfile();
     } catch (error) {
       console.error('Error uploading resume:', error);
-      setUploadError('Failed to upload resume. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -97,7 +178,6 @@ export function JobSeekerProfilePage() {
             label="Full Name"
             {...register('full_name', { required: 'Name is required' })}
             defaultValue={userDetails?.full_name}
-            error={errors.full_name?.message}
           />
 
           <Input
@@ -107,34 +187,23 @@ export function JobSeekerProfilePage() {
               required: 'Years of experience is required',
               min: { value: 0, message: 'Must be 0 or greater' }
             })}
-            error={errors.years_experience?.message}
           />
 
-          <Input
-            label="Skills (comma-separated)"
-            {...register('skills', { required: 'At least one skill is required' })}
-            placeholder="Project Management, Leadership, Strategic Planning"
-            error={errors.skills?.message}
+          <MultiSelect
+            label="Skills"
+            options={SKILL_OPTIONS}
+            value={selectedSkills}
+            onChange={setSelectedSkills}
+            placeholder="Select skills..."
           />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Preferred Schedule
-            </label>
-            <div className="mt-2 space-y-2">
-              {['Full-time', 'Part-time', 'Contract', 'Remote'].map((schedule) => (
-                <label key={schedule} className="inline-flex items-center mr-6">
-                  <input
-                    type="checkbox"
-                    value={schedule}
-                    {...register('preferred_schedule')}
-                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-600">{schedule}</span>
-                </label>
-              ))}
-            </div>
-          </div>
+          <MultiSelect
+            label="Preferred Schedule"
+            options={SCHEDULE_OPTIONS}
+            value={selectedSchedules}
+            onChange={setSelectedSchedules}
+            placeholder="Select schedule preferences..."
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -163,9 +232,6 @@ export function JobSeekerProfilePage() {
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               placeholder="Tell employers about your experience and what you're looking for..."
             />
-            {errors.bio && (
-              <p className="mt-1 text-sm text-red-600">{errors.bio.message}</p>
-            )}
           </div>
 
           <div>
@@ -185,9 +251,6 @@ export function JobSeekerProfilePage() {
                   hover:file:bg-primary-100"
               />
             </div>
-            {uploadError && (
-              <p className="mt-1 text-sm text-red-600">{uploadError}</p>
-            )}
           </div>
 
           <div className="pt-4">
