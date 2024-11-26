@@ -9,6 +9,7 @@ interface MultiSelectProps {
   value: string[];
   onChange: (value: string[]) => void;
   maxItems?: number;
+  error?: string;
   placeholder?: string;
 }
 
@@ -18,6 +19,7 @@ export function MultiSelect({
   value, 
   onChange, 
   maxItems, 
+  error, 
   placeholder = 'Select options...'
 }: MultiSelectProps) {
   const [query, setQuery] = useState('');
@@ -45,6 +47,10 @@ export function MultiSelect({
             </span>
           )}
         </Combobox.Label>
+        
+        {error && (
+          <p className="mt-1 text-sm text-red-600">{error}</p>
+        )}
         
         <div className="relative mt-1">
           <Combobox.Button as="div" className="w-full">

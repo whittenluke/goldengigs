@@ -6,6 +6,9 @@ import { Button } from '../../components/ui/Button';
 import { Job } from '../../types/database';
 import { useUpdateJobStatus } from '../../hooks/useUpdateJobStatus';
 import { toast } from 'react-hot-toast';
+import { useSubmitApplication } from '../../hooks/useSubmitApplication';
+import { useState } from 'react';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 
 export function JobDetailPage() {
   const { id } = useParams();
@@ -36,6 +39,23 @@ export function JobDetailPage() {
   });
 
   const updateStatus = useUpdateJobStatus(id!);
+  const submitApplication = useSubmitApplication();
+
+  const { data: existingApplication } = useQuery({
+    queryKey: ['application', job?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('applications')
+        .select('id, status')
+        .eq('job_id', job?.id)
+        .eq('user_id', user?.id)
+        .single();
+      return data;
+    },
+    enabled: !!job?.id && !!user?.id
+  });
+
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   if (isLoading) return <div>Loading...</div>;
   if (!job) return <div>Job not found</div>;
@@ -55,6 +75,21 @@ export function JobDetailPage() {
 
   const handleEdit = () => {
     navigate(`/employer/jobs/${id}/edit`);
+  };
+
+  const handleApply = () => {
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmApply = async () => {
+    if (!job?.id) return;
+    
+    try {
+      await submitApplication.mutateAsync(job.id);
+      setShowConfirmDialog(false);
+    } catch (error) {
+      console.error('Application submission failed:', error);
+    }
   };
 
   return (
@@ -92,8 +127,12 @@ export function JobDetailPage() {
               </Button>
             </div>
           ) : (
-            <Button onClick={() => {/* TODO: Implement apply */}}>
-              Apply Now
+            <Button 
+              onClick={handleApply}
+              isLoading={submitApplication.isLoading}
+              disabled={!!existingApplication}
+            >
+              {existingApplication ? 'Already Applied' : 'Apply Now'}
             </Button>
           )}
         </div>
@@ -152,6 +191,16 @@ export function JobDetailPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        onClose={() => setShowConfirmDialog(false)}
+        onConfirm={handleConfirmApply}
+        title="Submit Application"
+        message="Are you sure you want to apply for this position? Your profile information will be shared with the employer."
+        confirmText="Submit Application"
+        cancelText="Cancel"
+      />
     </div>
   );
 } 

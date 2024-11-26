@@ -7,7 +7,6 @@ import { useAuth } from '../../lib/auth';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { MultiSelect } from '../../components/ui/MultiSelect';
-import { useState } from 'react';
 import { Switch } from '@headlessui/react';
 
 // Validation schema
@@ -18,8 +17,10 @@ const profileSchema = z.object({
   bio: z.string()
     .min(50, 'Bio must be at least 50 characters')
     .max(500, 'Bio must be less than 500 characters'),
-  skills: z.array(z.string()),
-  preferred_schedule: z.array(z.string()),
+  skills: z.array(z.string())
+    .min(1, 'Please select at least one skill'),
+  preferred_schedule: z.array(z.string())
+    .min(1, 'Please select at least one schedule preference'),
   preferred_location: z.object({
     city: z.string()
       .min(2, 'City name must be at least 2 characters')
@@ -62,14 +63,11 @@ const SCHEDULE_OPTIONS = [
 export function JobSeekerProfileForm() {
   const { createJobSeekerProfile } = useAuth();
   const navigate = useNavigate();
-  const [skills, setSkills] = useState<string[]>([]);
-  const [schedules, setSchedules] = useState<string[]>([]);
-  const [isRemote, setIsRemote] = useState(false);
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     setValue,
     watch
   } = useForm<ProfileFormData>({
@@ -84,36 +82,18 @@ export function JobSeekerProfileForm() {
       },
       availability_status: 'open',
       bio: ''
-    },
-    mode: 'onSubmit'
+    }
   });
 
-  const bioLength = watch('bio')?.length || 0;
+  const remoteEnabled = watch('preferred_location.remote');
 
-  // Update form values when skills/schedules change
-  const handleSkillsChange = (newSkills: string[]) => {
-    setSkills(newSkills);
-    setValue('skills', newSkills, { 
-      shouldValidate: false // Prevent validation on change
-    });
-  };
-
-  const handleSchedulesChange = (newSchedules: string[]) => {
-    setSchedules(newSchedules);
-    setValue('preferred_schedule', newSchedules, { 
-      shouldValidate: false // Prevent validation on change
-    });
-  };
-
-  const onSubmit = async (data: ProfileFormData) => {
+  const onSubmit = handleSubmit(async (formData) => {
     try {
       await createJobSeekerProfile({
-        ...data,
-        skills,
-        preferred_schedule: schedules,
+        ...formData,
         preferred_location: {
-          city: data.preferred_location.city,
-          remote: isRemote
+          city: formData.preferred_location.city,
+          remote: remoteEnabled
         }
       });
       toast.success('Profile created successfully');
@@ -122,7 +102,7 @@ export function JobSeekerProfileForm() {
       console.error('Error creating profile:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create profile');
     }
-  };
+  });
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-12">
@@ -134,7 +114,7 @@ export function JobSeekerProfileForm() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={onSubmit} className="space-y-6">
           <Input
             label="Years of Experience"
             type="number"
@@ -172,24 +152,23 @@ export function JobSeekerProfileForm() {
             {errors.bio && (
               <p className="mt-1 text-sm text-red-600">{errors.bio.message}</p>
             )}
-            <p className="mt-1 text-sm text-gray-500">
-              {500 - bioLength} characters remaining
-            </p>
           </div>
 
           <MultiSelect
             label="Skills"
             options={SKILL_OPTIONS}
-            value={skills}
-            onChange={handleSkillsChange}
+            value={watch('skills')}
+            onChange={(value) => setValue('skills', value)}
+            error={errors.skills?.message}
             maxItems={10}
           />
 
           <MultiSelect
             label="Preferred Schedule"
             options={SCHEDULE_OPTIONS}
-            value={schedules}
-            onChange={handleSchedulesChange}
+            value={watch('preferred_schedule')}
+            onChange={(value) => setValue('preferred_schedule', value)}
+            error={errors.preferred_schedule?.message}
             maxItems={5}
           />
 
@@ -208,18 +187,15 @@ export function JobSeekerProfileForm() {
                 </span>
               </span>
               <Switch
-                checked={isRemote}
-                onChange={(checked) => {
-                  setIsRemote(checked);
-                  setValue('preferred_location.remote', checked);
-                }}
+                checked={remoteEnabled}
+                onChange={(checked) => setValue('preferred_location.remote', checked)}
                 className={`${
-                  isRemote ? 'bg-primary-600' : 'bg-gray-200'
+                  remoteEnabled ? 'bg-primary-600' : 'bg-gray-200'
                 } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2`}
               >
                 <span
                   className={`${
-                    isRemote ? 'translate-x-5' : 'translate-x-0'
+                    remoteEnabled ? 'translate-x-5' : 'translate-x-0'
                   } pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
                 />
               </Switch>
@@ -229,7 +205,6 @@ export function JobSeekerProfileForm() {
           <Button 
             type="submit" 
             className="w-full"
-            isLoading={isSubmitting}
           >
             Save Profile
           </Button>
